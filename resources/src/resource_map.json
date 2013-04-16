@@ -6,13 +6,13 @@
         {
             "type": "png",
             "defName": "IMAGE_PLUNGER",
-            "file": "images/plungerno2.png"
+            "file": "images/plungerno4.png"
         },
         
         {
             "type": "png-trans",
             "defName": "IMAGE_BASE",
-            "file": "images/base2.png"
+            "file": "images/base3.png"
         }
         
 	  ]
