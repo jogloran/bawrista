@@ -13,10 +13,18 @@ PBL_APP_INFO(MY_UUID,
 Window window;
 TextLayer steep_text_layer;
 TextLayer press_text_layer;
+TextLayer instr_text_layer;
 Layer image_layer;
+
+typedef enum { SET_STEEP, SET_PRESS, STEEP, PRESS, DONE } AppState;
+AppState state;
 
 char steep_time_buffer[12 + 5] = "Steep time: 0";
 char press_time_buffer[12 + 5] = "Press time: 0";
+// char instr_buffer[24] = "\0";
+char steep_msg[] = "Set time to Steep";
+char press_msg[] = "Set time to Press";
+char enjoy_msg[] = "Enjoy!";
 
 int steep_interval; // interval*15 seconds
 int press_interval; // interval*15 seconds
@@ -59,27 +67,71 @@ void itoa(int value, char *sp, int radix)
 }
 
 void update(void) {
-    itoa(steep_interval*15, steep_time_buffer+12, 10);
-    text_layer_set_text(&steep_text_layer, steep_time_buffer);
+    if (state == SET_STEEP) {
+        itoa(steep_interval*15, steep_time_buffer+12, 10);
+        text_layer_set_text(&steep_text_layer, steep_time_buffer);
+    } else if (state == SET_PRESS) {
+        itoa(press_interval*15, press_time_buffer+12, 10);
+        text_layer_set_text(&press_text_layer, press_time_buffer);
+    }
+    
+    char* msg;
+    switch (state) {
+      case SET_STEEP:
+        msg = steep_msg;
+        break;
+      case SET_PRESS:
+        msg = press_msg;
+        break;
+      case STEEP:
+        msg = steep_msg + 12;
+        break;
+      case PRESS:
+        msg = press_msg + 12;
+        break;
+      case DONE:
+        msg = enjoy_msg;
+        break;
+    }
+    text_layer_set_text(&instr_text_layer, msg);
 }
 
 void up_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
-  (void)recognizer;
-  (void)window;
+  int* var = NULL;
+  if (state == SET_STEEP) {
+      var = &steep_interval;
+  } else if (state == SET_PRESS) {
+      var = &press_interval;
+  }
 
-  if (steep_interval > 0) {
-    --steep_interval;
-    update();
+  if (var != NULL) {
+      if (*var > 0) {
+        --*var;
+        update();
+      }
   }
 }
 
 
 void down_single_click_handler(ClickRecognizerRef recognizer, Window *window) {
-  (void)recognizer;
-  (void)window;
+  int* var = NULL;
+  if (state == SET_STEEP) {
+      var = &steep_interval;
+  } else if (state == SET_PRESS) {
+      var = &press_interval;
+  }
 
-  if (steep_interval < 20) {
-    ++steep_interval;
+  if (var != NULL) {
+      if (*var < 20) {
+        ++*var;
+        update();
+      }
+  }
+}
+
+void select_click_handler(ClickRecognizerRef recognizer, Window *window) {
+  if (state <= SET_PRESS) {
+    ++state;
     update();
   }
 }
@@ -90,6 +142,9 @@ void click_config_provider(ClickConfig **config, Window *window) {
 
   config[BUTTON_ID_UP]->click.handler = (ClickHandler) up_single_click_handler;
   config[BUTTON_ID_UP]->click.repeat_interval_ms = 10000;
+  
+  config[BUTTON_ID_SELECT]->click.handler = (ClickHandler) select_click_handler;
+  config[BUTTON_ID_SELECT]->click.repeat_interval_ms = 10000;
 
   config[BUTTON_ID_DOWN]->click.handler = (ClickHandler) down_single_click_handler;
   config[BUTTON_ID_DOWN]->click.repeat_interval_ms = 10000;
@@ -105,6 +160,9 @@ void handle_init(AppContextRef ctx) {
   (void)ctx;
   
   steep_interval = 0;
+  press_interval = 0;
+  
+  state = SET_STEEP;
 
   window_init(&window, "baWrista");
   window_stack_push(&window, true);
@@ -122,6 +180,12 @@ void handle_init(AppContextRef ctx) {
   text_layer_set_text(&press_text_layer, press_time_buffer);
   text_layer_set_font(&press_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
   layer_add_child(&window.layer, &press_text_layer.layer);
+  
+  text_layer_init(&instr_text_layer, GRECT_OFFSET(window.layer.frame, 0, 30));
+  text_layer_set_text_alignment(&instr_text_layer, GTextAlignmentCenter);
+  text_layer_set_text(&instr_text_layer, steep_msg);
+  text_layer_set_font(&instr_text_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
+  layer_add_child(&window.layer, &instr_text_layer.layer);
   
   layer_init(&image_layer, GRECT_OFFSET(window.layer.frame, 0, 22));
   
