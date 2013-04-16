@@ -1,0 +1,20 @@
+{
+ "friendlyVersion": "0.1",
+ "versionDefName": "FONT_DEMO_RESOURCES",
+
+ "media": [
+        {
+            "type": "png",
+            "defName": "IMAGE_PLUNGER",
+            "file": "images/plungerno2.png"
+        },
+        
+        {
+            "type": "png-trans",
+            "defName": "IMAGE_BASE",
+            "file": "images/base2.png"
+        }
+        
+	  ]
+
+}
